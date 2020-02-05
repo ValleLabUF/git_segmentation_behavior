@@ -1,0 +1,302 @@
+---
+title: "Exploring Autocorrelation in Movement Parameters"
+author: "Josh Cullen"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: 
+  pdf_document: 
+    fig_caption: yes
+
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+```
+
+# Autocorrelation of SL, TA, and TAA
+
+Autcorrelation is common in the time series of animal trajectories. This document shows trends in autocorrelation of individual movement parameters at different sections of tracks (filtered for only 1 h time steps) for each ID. This is shown at different scales as well (lag.max = 50 or nobs).
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lubridate)
+
+source('helper functions.R')
+
+dat<- read.csv("Snail Kite Gridded Data.csv", header = T, sep = ",")
+names(dat)[7]<- "dist"  #change to generic form
+dat$ESTtime<- as_datetime(dat$ESTtime)
+dat$date<- date(dat$ESTtime)
+behav.list<- behav.prep(dat=dat, tstep = 3600)  #add move params and filter by 3600 s interval
+```
+
+## ID 1
+
+There are 6500 total observations in this dataset that have 1 h time steps. This will be split into four equal sections.
+
+### SL
+```{r}
+dat1<- behav.list$`1`
+dat1$acf<- rep(1:4, each=nrow(dat1)/4)
+
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat1 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+```{r, fig.cap="Autocorrelation of SL with a max lag of 50  or 1625 observations."}
+lag.max=nrow(dat1)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat1 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+
+### TA
+```{r}
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat1 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="Autocorrelation of TA with a max lag of 50 or 1625 observations."}
+lag.max=nrow(dat1)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat1 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+
+
+```{r, results='asis', fig.cap="Scales of axes are allowed to be free to show movement patterns.  All individual points represent a single observation for a given day for ID 1."}
+ggplot(dat1[1:70,]) +  #48 days betweeb multi-observation days for ID 1
+  geom_path(aes(utmlong, utmlat)) +
+  geom_point(aes(utmlong, utmlat), size=2) +
+  facet_wrap(~date, scales = "free") +
+  theme(axis.text = element_blank()) +
+  labs(title = "ID 1")
+
+```
+
+
+Trends in autocorrelation differed among the three movement parameters. For SL, it appears that there's a 24 h cycle within the 1st section for at least up to 50 observations, but this cyclical patterns appears to be lost within the last 3 sections that generally have high autocorrelation (**Fig 1**). When visualizing the ACF across all observations within each section, there appears to be a slight sinusoidal pattern that emerges after the decrease in autocorrelation after the first 250 observations. Autocorrelation may be significant at a lag of 1 for TA, but is low for all subsequent observations. When looking at the plot of movement patterns by day, this cyclical autocorrelation is likely a result of only a single observation being recorded each day for 48 days after the first one included in this dataset (w removal of all but 1 h time steps). This may be an artefact of removing all of the 2 h time steps, which were the most common for the beginning of the ID 1 track.
+
+
+
+\pagebreak
+
+## ID 12
+
+There are 3513 total observations in this dataset that have 1 h time steps. This will be split into four (roughly) equal sections.
+
+### SL
+```{r}
+dat12<- behav.list$`12`
+dat12$acf<- c(1, rep(1:4, each=nrow(dat12)/4))
+
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat12 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+```{r, fig.cap="Autocorrelation of SL with a max lag of 50 or 878 observations."}
+lag.max=nrow(dat12)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat12 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+
+### TA
+```{r}
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat12 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="Autocorrelation of TA with a max lag of 50 or 878 observations."}
+lag.max=nrow(dat12)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat12 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="ID 12 generally shows short, recursive movements around the nest site after tagging, with a couple longer step lengths on 7/24/2017."}
+ggplot(dat12[1:77,]) +
+  geom_path(aes(utmlong, utmlat)) +
+  geom_point(aes(utmlong, utmlat), size=2) +
+  facet_wrap(~date, scales = "fixed") +
+  theme(axis.text = element_blank())
+```
+
+
+
+There may be a slight cyclical pattern in the autocorrelation of SL over short lags (~10 obs), but generally decreases until ~20-40 observations. Over the entire time series of each segment, it appears that there are longer-term cyclical patterns emerging, but at different temporal scales by section (**Fig 4**). This pattern appears different in **ID 12** compared to **ID 1**. The autocorrelation in TA is essentially identical to that of **ID 1**, however. Unlike **ID 1**, **ID 12** has multiple observations recorded each day for the first week after tagging that are typically short and recursive in their pattern.
+
+
+\pagebreak
+
+## ID 19
+
+There are 1652 total observations in this dataset that have 1 h time steps. This will be split into four equal sections.
+
+### SL
+```{r}
+dat19<- behav.list$`19`
+dat19$acf<- rep(1:4, each=nrow(dat19)/4)
+
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat19 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+```{r, fig.cap="Autocorrelation of SL with a max lag of 50 or 413 observations."}
+lag.max=nrow(dat19)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat19 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+
+### TA
+```{r}
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat19 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="Autocorrelation of TA with a max lag of 50 or 878 observations."}
+lag.max=nrow(dat19)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat19 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="Most movements are short and recursive in ID 19 immediately after tagging, with the exception of a few step lengths on 12/27/2017 and 12/28/2017."}
+ggplot(dat19[1:69,]) +
+  geom_path(aes(utmlong, utmlat)) +
+  geom_point(aes(utmlong, utmlat), size=2) +
+  facet_wrap(~date, scales = "fixed") +
+  theme(axis.text = element_blank())
+```
+
+
+Autocorrelation in SL appears to occur until a lag of 10-20 observations, but also shows long-term cyclical patterns in ACF; these cyclical patterns fall within the confidence interval, however (**Fig 7**). This pattern appears similar to **ID 12**. Again, the autocorrelation in TA is essentially identical to that of **ID 1** and **ID 12** in that it is not significant and shows no patterns over time. The plot of daily movements by **ID 19** is very similar to that of **ID 12**, dominated by short, recursive steps.
+
+
+\pagebreak
+
+## ID 27
+
+There are 1652 total observations in this dataset that have 1 h time steps. This will be split into four (roughly) equal sections.
+
+### SL
+```{r}
+dat27<- behav.list$`27`
+dat27$acf<- c(1,1,rep(1:4, each=nrow(dat27)/4))
+
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat27 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+```{r, fig.cap="Autocorrelation of SL with a max lag of 50 or 413 observations."}
+lag.max=nrow(dat27)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat27 %>% filter(acf==i) %>% select(SL)
+  acf(tmp, lag.max = lag.max, main=paste("SL: Section",i))
+}
+```
+
+
+### TA
+```{r}
+lag.max=50
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat27 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="Autocorrelation of TA with a max lag of 50 or 878 observations."}
+lag.max=nrow(dat27)/4
+par(mfrow=c(2,2))
+
+for (i in 1:4) {
+  tmp<- dat27 %>% filter(acf==i) %>% select(TA)
+  acf(tmp, lag.max = lag.max, main=paste("TA: Section",i), na.action = na.pass)
+}
+```
+
+
+```{r, fig.cap="Similar to IDs 12 and 19, ID 27 also exhibits short and recursive movements in the days immediately after tagging."}
+ggplot(dat27[1:70,]) +
+  geom_path(aes(utmlong, utmlat)) +
+  geom_point(aes(utmlong, utmlat), size=2) +
+  facet_wrap(~date, scales = "fixed") +
+  theme(axis.text = element_blank())
+```
+
+
+Autocorrelation in SL appears to occur until a lag of 10-20 observations, but  shows long-term cyclical patterns in ACF in the second through fourth sections; these cyclical patterns fall mostly within the confidence interval, however (**Fig 10**). This pattern appears similar to **ID 12**. Again, the autocorrelation in TA is essentially identical to that of **ID 1**, **ID 12**, **ID 19** in that it is not significant and shows no patterns over time. The evaluation of the movement patterns in **ID 27** is also nearly identical to that of **IDs 12** and **19**.
+
+
+Cross-correlation among movement parameters was briefly explored as well, but due to the lack of signficance in the ACF of TA and TAA, there does not appear to be a significant trend when evaluating relationships of time series data.
