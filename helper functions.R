@@ -147,17 +147,20 @@ getML=function(dat,nburn) {  #select ML value that is beyond burn-in phase
   return(ML)
 }
 #---------------------------------------------
-getBreakpts=function(dat,ML,brk.cols) {  #extract breakpoints of ML per ID
-  tmp<- matrix(NA, length(dat), brk.cols)
+getBreakpts=function(dat,ML,identity) {  #extract breakpoints of ML per ID
+  tmp<- list()
   
   for(i in 1:length(dat)) {
     ind<- ML[i]
-    tmp[i,1:length(dat[[i]][[ind]])]<- round(dat[[i]][[ind]], 2)
+    tmp[[i]]<- dat[[i]][[ind]]
   }
   
-  tmp<- data.frame(tmp)
+  names(tmp)<- identity
+  max.length<- max(sapply(tmp, length))
+  tmp<- lapply(tmp, function(x) { c(x, rep(NA, max.length-length(x)))})
+  tmp<- map_dfr(tmp, `[`) %>% t() %>% data.frame()
   tmp<- cbind(id = identity, tmp)
-  names(tmp)<- c('id', paste0("Brk_",1:brk.cols))
+  names(tmp)<- c('id', paste0("Brk_",1:(ncol(tmp)-1)))
   
   tmp
 }

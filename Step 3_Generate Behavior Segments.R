@@ -26,7 +26,7 @@ angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins
 
 max.dist=max(dat[dat$dt == 3600,]$dist, na.rm = T)
 upper90.thresh=as.numeric(quantile(dat[dat$dt == 3600,]$dist, 0.90, na.rm=T)) 
-dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 5)
+dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 6)
 dist.bin.lims=c(dist.bin.lims, max.dist)  #6 bins
 
 #assign bins to obs
@@ -68,7 +68,7 @@ traceplot(data = dat.res$LML, type = "LML", identity = identity)
 
 ##Determine maximum likelihood (ML) for selecting breakpoints
 ML<- apply(dat.res$LML, 1, function(x) getML(dat = x, nburn = 500))
-brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, brk.cols = 99)  #brk.cols is max matrix cols
+brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, identity = identity)
 
 
 ## Heatmaps
@@ -82,7 +82,7 @@ plot.heatmap(data = behav.list, nbins = c(6,8), brkpts = brkpts, dat.res = dat.r
 
 dat_out<- map(behav.list, assign.time.seg, brkpts = brkpts) %>% map_dfr(`[`)  #assign time seg and make as DF
 
-setwd("~/Documents/Snail Kite Project/Data/R Scripts/git_LDA_behavior")
+setwd("~/Documents/Snail Kite Project/Data/R Scripts/ValleLabUF/git_LDA_behavior")
 write.csv(dat_out, "Snail Kite Gridded Data_TOHO_behav.csv", row.names = F)
 
 

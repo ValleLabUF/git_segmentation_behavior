@@ -1,4 +1,4 @@
-get.summary.stats=function(breakpt,dat,max.time,ncat.data,ndata.types){
+get.summary.stats=function(breakpt,dat,max.time,nbins,ndata.types){
   breakpt1=c(1,breakpt,max.time)
   n=length(breakpt1)
   
@@ -6,11 +6,14 @@ get.summary.stats=function(breakpt,dat,max.time,ncat.data,ndata.types){
   res=list()
   for (j in 1:ndata.types){
     #initialize matrix
-    res[[j]]=matrix(0,n-1,ncat.data[j])
+    res[[j]]=matrix(0,n-1,nbins[j])
     
     #get summary for each interval
     for (i in 2:n){
-      ind=breakpt1[i-1]:(breakpt1[i]-1)
+      if (i < n)
+        ind=breakpt1[i-1]:(breakpt1[i]-1)
+      if (i == n)
+        ind=breakpt1[i-1]:(breakpt1[i])
       tmp=dat[ind,j]
       tmp1=table(tmp)
       ind=as.numeric(names(tmp1))
@@ -20,23 +23,23 @@ get.summary.stats=function(breakpt,dat,max.time,ncat.data,ndata.types){
   res
 }
 #---------------------------------------------
-log.marg.likel=function(alpha,summary.stats,ncat.data,ndata.types){
+log.marg.likel=function(alpha,summary.stats,nbins,ndata.types){
   #get ratios
   probs=rep(NA,ndata.types)
   for (i in 1:ndata.types){
     lnum=rowSums(lgamma(alpha+summary.stats[[i]]))  
-    lden=lgamma(ncat.data[i]*alpha+rowSums(summary.stats[[i]]))
+    lden=lgamma(nbins[i]*alpha+rowSums(summary.stats[[i]]))
     p2=sum(lnum)-sum(lden)  
-    p1=nrow(summary.stats[[i]])*(lgamma(ncat.data[i]*alpha)-ncat.data[i]*lgamma(alpha))
+    p1=nrow(summary.stats[[i]])*(lgamma(nbins[i]*alpha)-nbins[i]*lgamma(alpha))
     probs[i]=p1+p2
   }
   sum(probs)
 }
 #---------------------------------------------
-samp.move=function(breakpt,max.time,dat,alpha,ncat.data,ndata.types){
+samp.move=function(breakpt,max.time,dat,alpha,nbins,ndata.types){
   breakpt.old=breakpt
   p=length(breakpt)
-  new.brk=sample(1:max.time,size=1)
+  new.brk=sample(2:max.time,size=1)  #don't propose a new.brk at brkpt = 1
   brk.augmented=sort(unique(c(breakpt.old,new.brk)))
   
   p0=1  
@@ -70,18 +73,18 @@ samp.move=function(breakpt,max.time,dat,alpha,ncat.data,ndata.types){
   
   #get sufficient statistics
   stats.old=get.summary.stats(breakpt=breakpt.old,max.time=max.time,dat=dat,
-                              ncat.data=ncat.data,ndata.types=ndata.types)
+                              nbins=nbins,ndata.types=ndata.types)
   stats.new=get.summary.stats(breakpt=breakpt.new,max.time=max.time,dat=dat,
-                              ncat.data=ncat.data,ndata.types=ndata.types)
+                              nbins=nbins,ndata.types=ndata.types)
   
   #get marginal loglikel
   pold=log.marg.likel(alpha=alpha,summary.stats=stats.old,
-                      ncat.data=ncat.data,ndata.types=ndata.types)
+                      nbins=nbins,ndata.types=ndata.types)
   pnew=log.marg.likel(alpha=alpha,summary.stats=stats.new,
-                      ncat.data=ncat.data,ndata.types=ndata.types)+log(p0)
+                      nbins=nbins,ndata.types=ndata.types)+log(p0)
   prob=exp(pnew-pold)
   rand2=runif(1)
   
-  if (rand2<prob) return(breakpt.new)
-  return(breakpt.old)
+  if (rand2<prob) return(list(breakpt.new, pnew))
+  return(list(breakpt.old, pold))
 }

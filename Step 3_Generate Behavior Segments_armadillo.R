@@ -13,20 +13,20 @@ source('gibbs sampler2.R')
 dat<- read.csv("Modified Armadillo Data.csv", header = T, sep = ",")
 dat$date<- dat$date %>% as_datetime()
 
-#if dt within 5 min of 1 hr, round to 1 hr
+#if dt within 1 min of 5 min, round to 5 min
 dat<- round_track_time(dat = dat, int = 300, tol = 1/60*3600)
 
 dat.list<- df.to.list(dat=dat)
 
 #filter data for dt of interest
-behav.list<- behav.prep(dat=dat, tstep = 300)  #add move params and filter by 3600 s interval
+behav.list<- behav.prep(dat=dat, tstep = 300)  #add move params and filter by 300 s interval
 
 #add discretized mvmt params
 angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)
 max.dist=max(dat[dat$dt == 300,]$dist, na.rm = T) #using value from entire dataset, not specific time segment
 upper90.thresh=as.numeric(quantile(dat[dat$dt == 300,]$dist, 0.90, na.rm=T)) #using value from entire dataset of given tstep
-# dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 5)
-dist.bin.lims=as.numeric(quantile(dat[dat$dt == 300,]$dist, c(0,0.30,0.60,0.90), na.rm=T))
+dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 6)
+# dist.bin.lims=as.numeric(quantile(dat[dat$dt == 300,]$dist, c(0,0.25,0.50, 0.75,0.90), na.rm=T))
 dist.bin.lims=c(dist.bin.lims, max.dist)
 
 for (i in 1:length(behav.list)) {
@@ -38,7 +38,7 @@ behav.list[[i]]<- behav.list[[i]] %>% assign.dist.bin(dist.bin.lims = dist.bin.l
 
 behav.list<- behav.list[sapply(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
 behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA)))  #retain id and parameters on which to segment
-
+dat_red<- behav.list2 %>% map(., ~mutate(., tseg = 1:nrow(.))) %>% map_dfr(., `[`) %>% dplyr::select(c(id, tseg, SL, TA))
 
 #################################
 #### Run Gibbs Sampler by ID ####

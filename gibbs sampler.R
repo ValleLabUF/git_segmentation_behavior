@@ -1,7 +1,7 @@
 behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha) {
   set.seed(1)
   
-  uni.id=unique(dat$id)
+  uni.id=unique(dat$id)  #need this query if running multiple IDs in parallel
   dat=subset(dat, select = -id)
   
   #useful stuff
