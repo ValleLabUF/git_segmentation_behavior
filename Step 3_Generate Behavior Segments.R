@@ -6,9 +6,9 @@ library(viridis)
 library(lubridate)
 
 
-source('gibbs functions2.R')
+source('gibbs functions.R')
 source('helper functions.R')
-source('gibbs sampler2.R')
+source('gibbs sampler.R')
 
 dat<- read.csv("Snail Kite Gridded Data_TOHO.csv", header = T, sep = ",")
 dat$date<- dat$date %>% as_datetime()
