@@ -6,9 +6,9 @@ library(viridis)
 library(lubridate)
 
 
-source('gibbs functions2.R')
+source('gibbs functions.R')
 source('helper functions.R')
-source('gibbs sampler2.R')
+source('gibbs sampler.R')
 
 dat<- read.csv("Modified Armadillo Data.csv", header = T, sep = ",")
 dat$date<- dat$date %>% as_datetime()
@@ -26,7 +26,7 @@ angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)
 max.dist=max(dat[dat$dt == 300,]$dist, na.rm = T) #using value from entire dataset, not specific time segment
 upper90.thresh=as.numeric(quantile(dat[dat$dt == 300,]$dist, 0.90, na.rm=T)) #using value from entire dataset of given tstep
 dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 6)
-# dist.bin.lims=as.numeric(quantile(dat[dat$dt == 300,]$dist, c(0,0.25,0.50, 0.75,0.90), na.rm=T))
+dist.bin.lims=as.numeric(quantile(dat[dat$dt == 300,]$dist, c(0,0.25,0.50,0.75,1), na.rm=T))
 dist.bin.lims=c(dist.bin.lims, max.dist)
 
 for (i in 1:length(behav.list)) {
@@ -46,12 +46,14 @@ dat_red<- behav.list2 %>% map(., ~mutate(., tseg = 1:nrow(.))) %>% map_dfr(., `[
 
 ngibbs = 40000
 
+#prior
+alpha=1
 
 ## Run Gibbs sampler
 plan(multisession)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
 
-dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(4,8))
+dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(4,8), alpha = alpha)
 ###Takes 12.5 min to run 40000 iterations for 26 IDs
 
 
@@ -65,7 +67,7 @@ traceplot(data = dat.res$LML, type = "LML", identity = identity)
 
 ##Determine maximum likelihood (ML) for selecting breakpoints
 ML<- apply(dat.res$LML, 1, function(x) getML(dat = x, nburn = 500))
-brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, brk.cols = 99)  #brk.cols is max matrix cols
+brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, identity = identity)
 
 
 ## Heatmaps
