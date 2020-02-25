@@ -29,6 +29,28 @@ upper90.thresh=as.numeric(quantile(dat[dat$dt == 3600,]$dist, 0.90, na.rm=T))
 dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 6)
 dist.bin.lims=c(dist.bin.lims, max.dist)  #6 bins
 
+
+#Viz discretization of continuous vars
+behav.df<- map_dfr(behav.list, `[`)
+
+ggplot(behav.df, aes(x=dist/1000)) +
+  geom_density(fill = "lightblue") +
+  xlim(0,5) +  #limit to only 5 km
+  geom_vline(xintercept = dist.bin.lims[2:6]/1000, linetype = "dashed") +
+  theme_bw() +
+  theme(panel.grid = element_blank(), axis.title = element_text(size = 16),
+        axis.text = element_text(size = 12)) +
+  labs(x = "\nStep Length (km)", y = "Density\n")
+
+ggplot(behav.df, aes(x=rel.angle)) +
+  geom_density(fill = "indianred") +
+  geom_vline(xintercept = angle.bin.lims[2:8], linetype = "dashed") +
+  theme_bw() +
+  theme(panel.grid = element_blank(), axis.title = element_text(size = 16),
+        axis.text = element_text(size = 12)) +
+  labs(x = "\nTurning Angle (rad)", y = "Density\n")
+
+
 #assign bins to obs
 for (i in 1:length(behav.list)) {
   behav.list[[i]]<- behav.list[[i]] %>% assign.dist.bin(dist.bin.lims = dist.bin.lims,
