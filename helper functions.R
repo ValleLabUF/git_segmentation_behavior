@@ -8,7 +8,7 @@ assign.rel_angle.bin=function(dat, angle.bin.lims){
   dat
 }
 #---------------------------------------------
-assign.dist.bin=function(dat, dist.bin.lims, max.dist){
+assign.dist.bin=function(dat, dist.bin.lims){
   
   dat$SL<- NA
   
@@ -16,7 +16,7 @@ assign.dist.bin=function(dat, dist.bin.lims, max.dist){
     tmp=which(dat$dist >= dist.bin.lims[i] & dat$dist < dist.bin.lims[i+1])
     dat[tmp,"SL"]=i
   }
-  tmp=which(dat$dist == max.dist)
+  tmp=which(dat$dist == dist.bin.lims[length(dist.bin.lims)])
   dat[tmp,"SL"]=length(dist.bin.lims) - 1
   
   dat

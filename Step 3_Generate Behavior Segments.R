@@ -25,9 +25,8 @@ behav.list<- behav.prep(dat=dat, tstep = 3600)  #add move params and filter by 3
 angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins
 
 max.dist=max(dat[dat$dt == 3600,]$dist, na.rm = T)
-upper90.thresh=as.numeric(quantile(dat[dat$dt == 3600,]$dist, 0.90, na.rm=T)) 
-dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 6)
-dist.bin.lims=c(dist.bin.lims, max.dist)  #6 bins
+dist.bin.lims=quantile(dat[dat$dt == 3600,]$dist, c(0,0.25,0.50,0.75,0.90), na.rm=T)
+dist.bin.lims=c(dist.bin.lims, max.dist)  #5 bins
 
 
 #Viz discretization of continuous vars
@@ -36,7 +35,7 @@ behav.df<- map_dfr(behav.list, `[`)
 ggplot(behav.df, aes(x=dist/1000)) +
   geom_density(fill = "lightblue") +
   xlim(0,5) +  #limit to only 5 km
-  geom_vline(xintercept = dist.bin.lims[2:6]/1000, linetype = "dashed") +
+  geom_vline(xintercept = dist.bin.lims/1000, linetype = "dashed") +
   theme_bw() +
   theme(panel.grid = element_blank(), axis.title = element_text(size = 16),
         axis.text = element_text(size = 12)) +
@@ -44,7 +43,7 @@ ggplot(behav.df, aes(x=dist/1000)) +
 
 ggplot(behav.df, aes(x=rel.angle)) +
   geom_density(fill = "indianred") +
-  geom_vline(xintercept = angle.bin.lims[2:8], linetype = "dashed") +
+  geom_vline(xintercept = angle.bin.lims, linetype = "dashed") +
   theme_bw() +
   theme(panel.grid = element_blank(), axis.title = element_text(size = 16),
         axis.text = element_text(size = 12)) +
@@ -53,8 +52,8 @@ ggplot(behav.df, aes(x=rel.angle)) +
 
 #assign bins to obs
 for (i in 1:length(behav.list)) {
-  behav.list[[i]]<- behav.list[[i]] %>% assign.dist.bin(dist.bin.lims = dist.bin.lims,
-                                                        max.dist = max.dist) %>%
+  behav.list[[i]]<- behav.list[[i]] %>%
+    assign.dist.bin(dist.bin.lims = dist.bin.lims) %>%
     assign.rel_angle.bin(angle.bin.lims = angle.bin.lims)
 }
 
@@ -76,8 +75,8 @@ plan(multisession)  #run all MCMC chains in parallel
 #prior
 alpha=1
 
-dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(6,8), alpha = alpha)
-###Takes 12.5 min to run 40000 iterations for 26 IDs
+dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,8), alpha = alpha)
+###Takes 25 min to run 40000 iterations for 26 IDs
 
 
 ## Traceplots
@@ -94,7 +93,7 @@ brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, identity = identity)
 
 
 ## Heatmaps
-plot.heatmap(data = behav.list, nbins = c(6,8), brkpts = brkpts, dat.res = dat.res, type = "behav")
+plot.heatmap(data = behav.list, nbins = c(5,8), brkpts = brkpts, dat.res = dat.res, type = "behav")
 
 
 
