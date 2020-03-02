@@ -104,6 +104,6 @@ plot.heatmap(data = behav.list, nbins = c(5,8), brkpts = brkpts, dat.res = dat.r
 dat_out<- map(behav.list, assign.time.seg, brkpts = brkpts) %>% map_dfr(`[`)  #assign time seg and make as DF
 
 setwd("~/Documents/Snail Kite Project/Data/R Scripts/ValleLabUF/git_LDA_behavior")
-write.csv(dat_out, "Snail Kite Gridded Data_TOHO_behav.csv", row.names = F)
+write.csv(dat_out, "Snail Kite Gridded Data_TOHO_behav2.csv", row.names = F)
 
 
