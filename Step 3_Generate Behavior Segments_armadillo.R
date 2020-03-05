@@ -21,24 +21,22 @@ dat.list<- df.to.list(dat=dat)
 #filter data for dt of interest
 behav.list<- behav.prep(dat=dat, tstep = 300)  #add move params and filter by 300 s interval
 
-#add discretized mvmt params
-angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)
-max.dist=max(dat[dat$dt == 300,]$dist, na.rm = T) #using value from entire dataset, not specific time segment
-upper90.thresh=as.numeric(quantile(dat[dat$dt == 300,]$dist, 0.90, na.rm=T)) #using value from entire dataset of given tstep
-dist.bin.lims=seq(from=0, to=upper90.thresh, length.out = 6)
-dist.bin.lims=as.numeric(quantile(dat[dat$dt == 300,]$dist, c(0,0.25,0.50,0.75,1), na.rm=T))
-dist.bin.lims=c(dist.bin.lims, max.dist)
+#define bin number and limits for step lengths and turning angles
+angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins
+
+max.dist=max(dat[dat$dt == 300,]$dist, na.rm = T)
+dist.bin.lims=quantile(dat[dat$dt == 300,]$dist, c(0,0.25,0.50,0.75,0.90), na.rm=T)
+dist.bin.lims=c(dist.bin.lims, max.dist)  #5 bins
 
 for (i in 1:length(behav.list)) {
-behav.list[[i]]<- behav.list[[i]] %>% assign.dist.bin(dist.bin.lims = dist.bin.lims,
-                                                 max.dist = max.dist) %>%
+behav.list[[i]]<- behav.list[[i]] %>% assign.dist.bin(dist.bin.lims = dist.bin.lims) %>%
                                  assign.rel_angle.bin(angle.bin.lims = angle.bin.lims)
 }
 
 
 behav.list<- behav.list[sapply(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
 behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA)))  #retain id and parameters on which to segment
-dat_red<- behav.list2 %>% map(., ~mutate(., tseg = 1:nrow(.))) %>% map_dfr(., `[`) %>% dplyr::select(c(id, tseg, SL, TA))
+# dat_red<- behav.list2 %>% map(., ~mutate(., tseg = 1:nrow(.))) %>% map_dfr(., `[`) %>% dplyr::select(c(id, tseg, SL, TA))
 
 #################################
 #### Run Gibbs Sampler by ID ####
@@ -53,8 +51,8 @@ alpha=1
 plan(multisession)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
 
-dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(4,8), alpha = alpha)
-###Takes 12.5 min to run 40000 iterations for 26 IDs
+dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,8), alpha = alpha)
+###Takes 9 min to run 40000 iterations for all IDs
 
 
 ## Traceplots
@@ -71,7 +69,7 @@ brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, identity = identity)
 
 
 ## Heatmaps
-plot.heatmap(data = behav.list, nbins = c(4,8), brkpts = brkpts, dat.res = dat.res, type = "behav")
+plot.heatmap(data = behav.list, nbins = c(5,8), brkpts = brkpts, dat.res = dat.res, type = "behav")
 
 
 
