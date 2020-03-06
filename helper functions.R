@@ -165,7 +165,7 @@ getBreakpts=function(dat,ML,identity) {  #extract breakpoints of ML per ID
   tmp
 }
 #------------------------------------------------
-plot.heatmap.behav=function(data, nbins, brkpts, dat.res) {
+plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
   
   behav.heat<- behav.seg.image(data, nbins)
   
@@ -187,6 +187,18 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res) {
   breakpt<- brkpts[ind,-1] %>% purrr::discard(is.na) %>% t() %>% data.frame()
   names(breakpt)<- "breaks"
   
+  
+  legend<- ifelse(legend == TRUE, "right", "none")
+  title<- ifelse(title == TRUE,
+                 list(theme(axis.title = element_text(size = 18),
+                            axis.text = element_text(size = 12),
+                       strip.text = element_text(size = 12, face = 'bold'),
+                       plot.title = element_text(size = 20), legend.position = legend)),
+                 list(theme(axis.title = element_text(size = 18),
+                            axis.text = element_text(size = 12),
+                       strip.text = element_text(size = 12, face = 'bold'),
+                       plot.title = element_blank(), legend.position = legend)))
+  
   print(
   ggplot(behav.heat_long, aes(x=time, y=key, fill=value)) +
     geom_tile() +
@@ -198,21 +210,21 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res) {
                size = 0.4) +
     labs(x = "Observations", y = "Bin", title = paste("ID", unique(data$id))) +
     theme_bw() +
-    theme(axis.title = element_text(size = 18), axis.text = element_text(size = 12),
-          strip.text = element_text(size = 12, face = 'bold'),
-          title = element_text(size = 20))
+    title
   )
 }
 #------------------------------------------------
-plot.heatmap=function(data, nbins, brkpts, dat.res, type) {  #type can either be 'loc' or 'behav'
+plot.heatmap=function(data, nbins, brkpts, dat.res, type, title, legend) {  #type can either be 'loc' or 'behav'
   
   if (type == "loc") {
     par(ask = TRUE)
-    map(data, ~plot.heatmap.loc(., nbins = nbins, brkpts = brkpts, dat.res = dat.res))
+    map(data, ~plot.heatmap.loc(., nbins = nbins, brkpts = brkpts, dat.res = dat.res,
+                                title = title, legend = legend))
     par(ask = FALSE)
   } else if (type == "behav") {
     par(ask = TRUE)
-    map(data, ~plot.heatmap.behav(., nbins = nbins, brkpts = brkpts, dat.res = dat.res))
+    map(data, ~plot.heatmap.behav(., nbins = nbins, brkpts = brkpts, dat.res = dat.res,
+                                  title = title, legend = legend))
     par(ask = FALSE)
   } else {
     stop("Need to select type as either 'loc' or 'behav'")

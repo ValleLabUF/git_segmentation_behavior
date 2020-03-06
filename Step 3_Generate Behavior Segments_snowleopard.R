@@ -13,7 +13,6 @@ source('gibbs sampler.R')
 
 dat<- read.csv("Modified Snow Leopard Data.csv", header = T, sep = ",")
 dat$date<- dat$date %>% as_datetime()
-levels(dat$id)[4:5]<- "Pari"  #merge for single Pari track
 
 #if dt within 5 min of 3 h, round to 3 h
 dat<- round_track_time(dat = dat, int = 10800, tol = 300)
@@ -113,7 +112,7 @@ plan(multisession)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
 
 dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,8), alpha = alpha)
-###Takes 10 min to run 40000 iterations for 4 IDs
+###Takes 8 min to run 40000 iterations for 5 IDs
 
 
 ## Traceplots
