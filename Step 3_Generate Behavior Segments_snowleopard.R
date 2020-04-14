@@ -18,7 +18,7 @@ levels(dat$id)[4:5]<- "Pari"
 #if dt within 5 min of 3 h, round to 3 h
 dat<- round_track_time(dat = dat, int = 10800, tol = 300)
 
-dat.list<- df.to.list(dat=dat)
+dat.list<- df.to.list(dat=dat, ind = "id")
 
 #filter data for dt of interest
 behav.list<- behav.prep(dat=dat, tstep = 10800)  #add move params and filter by 10800 s interval
@@ -53,10 +53,9 @@ ggplot(behav.df, aes(x=rel.angle)) +
 
 
 
-for (i in 1:length(behav.list)) {
-behav.list[[i]]<- behav.list[[i]] %>% assign.dist.bin(dist.bin.lims = dist.bin.lims) %>%
-                                 assign.rel_angle.bin(angle.bin.lims = angle.bin.lims)
-}
+
+behav.list<- map(behav.list, discrete_move_par, lims = list(dist.bin.lims, angle.bin.lims),
+                 varIn = c("dist", "rel.angle"), varOut = c("SL", "TA"))
 
 
 behav.list<- behav.list[sapply(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
@@ -113,7 +112,7 @@ plan(multisession)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
 
 dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,8), alpha = alpha)
-###Takes 7 min to run 40000 iterations for 5 IDs
+###Takes 10 min to run 40000 iterations for 4 IDs
 
 
 ## Traceplots
