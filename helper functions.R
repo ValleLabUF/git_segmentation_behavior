@@ -1,29 +1,47 @@
-assign.rel_angle.bin=function(dat, angle.bin.lims){
-  dat$TA<- NA
+discrete_move_par=function(dat, lims, varIn, varOut){  #dat can be DF or matrix
+                                                       #lims must be list
+                                                       #varIn and varOut can be vectors
   
-  for(i in 1:length(angle.bin.lims)) {
-    tmp=which(dat$rel.angle >= angle.bin.lims[i] & dat$rel.angle < angle.bin.lims[i+1])
-    dat[tmp,"TA"]=i
+  # lims<- setNames(split(lims, seq(nrow(lims)), drop = T), rownames(lims))  #convert lims to list by row and make rownames the name of each element
+  
+  for (i in 1:length(lims)) {
+    for(j in 1:length(lims[[i]])) {
+      tmp = which(dat[,varIn[i]] >= lims[[i]][j] & dat[,varIn[i]] < lims[[i]][j+1])
+      dat[tmp,varOut[i]]=j
+    }
+    tmp = which(dat[,varIn[i]] == lims[[i]][length(lims[[i]])])
+    dat[tmp,varOut[i]] = length(lims[[i]]) - 1
   }
+  
   dat
 }
 #---------------------------------------------
-assign.dist.bin=function(dat, dist.bin.lims){
-  
-  dat$SL<- NA
-  
-  for(i in 1:length(dist.bin.lims)) {
-    tmp=which(dat$dist >= dist.bin.lims[i] & dat$dist < dist.bin.lims[i+1])
-    dat[tmp,"SL"]=i
-  }
-  tmp=which(dat$dist == dist.bin.lims[length(dist.bin.lims)])
-  dat[tmp,"SL"]=length(dist.bin.lims) - 1
-  
-  dat
-}
+# assign.rel_angle.bin=function(dat, angle.bin.lims){
+#   dat$TA<- NA
+# 
+#   for(i in 1:length(angle.bin.lims)) {
+#     tmp=which(dat$rel.angle >= angle.bin.lims[i] & dat$rel.angle < angle.bin.lims[i+1])
+#     dat[tmp,"TA"]=i
+#   }
+#   dat
+# }
+#---------------------------------------------
+# assign.dist.bin=function(dat, dist.bin.lims){
+# 
+#   dat$SL<- NA
+# 
+#   for(i in 1:length(dist.bin.lims)) {
+#     tmp=which(dat$dist >= dist.bin.lims[i] & dat$dist < dist.bin.lims[i+1])
+#     dat[tmp,"SL"]=i
+#   }
+#   tmp=which(dat$dist == dist.bin.lims[length(dist.bin.lims)])
+#   dat[tmp,"SL"]=length(dist.bin.lims) - 1
+# 
+#   dat
+# }
 #---------------------------------------------
 round_track_time=function(dat, int, tol) {  #replacement for sett0() when wanting to only round some of the times
-  dat<- df.to.list(dat)
+  dat<- df.to.list(dat, ind = "id")
   for (i in 1:length(dat)) {
     tmp=matrix(NA,nrow(dat[[i]]),2)
     if (length(int) == 1) {  #when using only 1 time interval
@@ -102,8 +120,6 @@ assign.time.seg=function(dat, brkpts){  #add tseg assignment to each obs
   tmp=which(unique(dat$id) == brkpts$id)
   breakpt<- brkpts[tmp,-1] %>% purrr::discard(is.na) %>% as.numeric(.[1,])
   breakpt1=c(0,breakpt,Inf)
-  tmp1<- which(diff(breakpt1) < 1)  #check for impossible time units
-  breakpt1[tmp1+1]<- breakpt1[(tmp1+1)] + 1  #fix impossible time units
   n=length(breakpt1)
   res=matrix(NA,nrow(dat),1)
   for (i in 2:n){
@@ -114,19 +130,21 @@ assign.time.seg=function(dat, brkpts){  #add tseg assignment to each obs
   dat
 }
 #------------------------------------------------
-df.to.list=function(dat) {  #only for id as col in dat
-  id<- unique(dat$id)
+df.to.list=function(dat, ind) {  #ind must be in quotes
+  id<- unique(dat[,ind])
   n=length(id)
   dat.list<- vector("list", n)
   names(dat.list)<- id
   
   for (i in 1:length(id)) {
-    dat.list[[i]]<- dat[dat$id==id[i],]
+    tmp<- which(dat[,ind] == id[i])
+    dat.list[[i]]<- dat[tmp,]
   }
   dat.list
 }
 #------------------------------------------------
 traceplot=function(data, type, identity) {  #create traceplots for nbrks or LML for all IDs
+  par(mfrow=c(2,2))
   for (i in 1:length(identity)) {
     par(ask=TRUE)
     plot(x=1:ngibbs, y=data[i,-1], type = "l", xlab = "Iteration",
@@ -135,7 +153,7 @@ traceplot=function(data, type, identity) {  #create traceplots for nbrks or LML 
                               stop("Need to select one of 'nbrks' or 'LML' for plotting"))),
          main = paste("ID",rownames(data)[i]))
   }
-  on.exit(par(ask = FALSE))
+  on.exit(par(ask = FALSE, mfrow=c(1,1)))
 }
 #---------------------------------------------
 getML=function(dat,nburn) {  #select ML value that is beyond burn-in phase
