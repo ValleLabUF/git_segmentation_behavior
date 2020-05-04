@@ -17,7 +17,7 @@ dat$date<- dat$date %>% as_datetime()
 #if dt within 5 min of 1 hr, round to 1 hr
 dat<- round_track_time(dat = dat, int = 3600, tol = 5/60*3600)
 
-dat.list<- df.to.list(dat=dat)
+dat.list<- df.to.list(dat=dat, ind = "id")
 
 #filter data for tstep of interest
 behav.list<- behav.prep(dat=dat, tstep = 3600)  #add move params and filter by 3600 s interval
@@ -55,11 +55,8 @@ ggplot(behav.df, aes(x=rel.angle)) +
 
 
 #assign bins to obs
-for (i in 1:length(behav.list)) {
-  behav.list[[i]]<- behav.list[[i]] %>%
-    assign.dist.bin(dist.bin.lims = dist.bin.lims) %>%
-    assign.rel_angle.bin(angle.bin.lims = angle.bin.lims)
-}
+behav.list<- map(behav.list, discrete_move_par, lims = list(dist.bin.lims, angle.bin.lims),
+                 varIn = c("dist", "rel.angle"), varOut = c("SL", "TA"))
 
 behav.list<- behav.list[sapply(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
 behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA)))  #retain id and parameters on which to segment

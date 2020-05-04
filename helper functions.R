@@ -94,8 +94,10 @@ behav.prep=function(dat,tstep) {
   names(behav.list)<- id[ind]
   
   for (i in 1:n) {
-    behav.list[[i]]<- dat[dat$id==id[ind[i]],] %>% mutate(obs = 1:nrow(.)) %>% filter(dt==tstep) %>%
-                  mutate(time1 = 1:nrow(.)) 
+    behav.list[[i]]<- dat[dat$id==id[ind[i]],] %>%
+      mutate(obs = 1:nrow(.)) %>%
+      filter(dt==tstep) %>%
+      mutate(time1 = 1:nrow(.)) 
   }
   behav.list
 }
@@ -143,20 +145,25 @@ df.to.list=function(dat, ind) {  #ind must be in quotes
   dat.list
 }
 #------------------------------------------------
-traceplot=function(data, type, identity) {  #create traceplots for nbrks or LML for all IDs
-  par(mfrow=c(2,2))
+traceplot=function(data, type) {  #create traceplots for nbrks or LML for all IDs
+  identity<- rownames(data)
+  
+  ifelse(length(identity) == 1, par(mfrow=c(1,1)),
+         ifelse(length(identity) == 2, par(mfrow=c(1,2)), par(mfrow=c(2,2))))
+  
   for (i in 1:length(identity)) {
     par(ask=TRUE)
     plot(x=1:ngibbs, y=data[i,-1], type = "l", xlab = "Iteration",
          ylab = ifelse(type == "nbrks", "# of Breakpoints",
                        ifelse(type == "LML","Log Marginal Likelihood",
                               stop("Need to select one of 'nbrks' or 'LML' for plotting"))),
-         main = paste("ID",rownames(data)[i]))
+         main = paste("ID",identity[i]))
   }
   on.exit(par(ask = FALSE, mfrow=c(1,1)))
 }
+
 #---------------------------------------------
-getML=function(dat,nburn) {  #select ML value that is beyond burn-in phase
+getML_internal=function(dat,nburn) {  #select ML value that is beyond burn-in phase
   if (which.max(dat[-1]) < nburn) {
     ML<- dat[-1] %>% order(decreasing = T) %>% subset(. > nburn) %>% first()
   } else {
@@ -165,7 +172,16 @@ getML=function(dat,nburn) {  #select ML value that is beyond burn-in phase
   return(ML)
 }
 #---------------------------------------------
-getBreakpts=function(dat,ML,identity) {  #extract breakpoints of ML per ID
+getML=function(dat,nburn) {
+  ML<- vector()
+  for (i in 1:nrow(dat)) {
+    ML[i]<- getML_internal(dat[i,-1], nburn)
+  }
+  
+  ML
+}
+#---------------------------------------------
+getBreakpts=function(dat,ML) {  #extract breakpoints of ML per ID
   tmp<- list()
   
   for(i in 1:length(dat)) {
@@ -173,11 +189,11 @@ getBreakpts=function(dat,ML,identity) {  #extract breakpoints of ML per ID
     tmp[[i]]<- dat[[i]][[ind]]
   }
   
-  names(tmp)<- identity
+  names(tmp)<- ML
   max.length<- max(sapply(tmp, length))
   tmp<- lapply(tmp, function(x) { c(x, rep(NA, max.length-length(x)))})
   tmp<- map_dfr(tmp, `[`) %>% t() %>% data.frame()
-  tmp<- cbind(id = identity, tmp)
+  tmp<- cbind(id = names(dat), tmp)
   names(tmp)<- c('id', paste0("Brk_",1:(ncol(tmp)-1)))
   
   tmp
@@ -206,16 +222,28 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
   names(breakpt)<- "breaks"
   
   
-  legend<- ifelse(legend == TRUE, "right", "none")
+  if(legend == TRUE) {
+    legend.pos<- "top"
+  } else {
+    legend.pos<- "none"
+  }
   title<- ifelse(title == TRUE,
                  list(theme(axis.title = element_text(size = 18),
                             axis.text = element_text(size = 12),
                        strip.text = element_text(size = 12, face = 'bold'),
-                       plot.title = element_text(size = 20), legend.position = legend)),
+                       plot.title = element_text(size = 20, hjust = 0),
+                       plot.margin = margin(0.5, 1, 0.5, 0.5, "cm"),
+                       legend.justification = "right",
+                       legend.position = legend.pos,
+                       legend.text = element_text(
+                         margin = margin(r = 15, unit = "pt")))),
                  list(theme(axis.title = element_text(size = 18),
                             axis.text = element_text(size = 12),
                        strip.text = element_text(size = 12, face = 'bold'),
-                       plot.title = element_blank(), legend.position = legend)))
+                       plot.title = element_blank(),
+                       legend.position = legend.pos,
+                       legend.text = element_text(
+                         margin = margin(r = 15, unit = "pt")))))
   
   print(
   ggplot(behav.heat_long, aes(x=time, y=key, fill=value)) +
@@ -225,8 +253,9 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
     scale_y_discrete(expand = c(0,0)) +
     scale_x_continuous(expand = c(0,0)) +
     geom_vline(data = breakpt, aes(xintercept = breaks), color = viridis(n=9)[7],
-               size = 0.4) +
-    labs(x = "Observations", y = "Bin", title = paste("ID", unique(data$id))) +
+               size = 1) +
+    labs(x = "Observations", y = "Bin") +
+    ggtitle(paste("ID", unique(data$id))) +
     theme_bw() +
     title
   )

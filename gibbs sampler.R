@@ -1,4 +1,5 @@
 behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha) {
+  start.time<- Sys.time()  #start timer
   set.seed(1)
   
   uni.id=unique(dat$id)  #need this query if running multiple IDs in parallel
@@ -37,7 +38,10 @@ behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha) {
   res.LML[1,]=c(uni.id,tmp)
   colnames(res.LML)<- c('id', paste0("Iter_",1:ngibbs))
   
-  list(breakpt=res.brks, nbrks=res.nbrks, LML=res.LML)
+  end.time<- Sys.time()
+  elapsed.time<- difftime(end.time, start.time, units = "min")  #end timer
+  
+  list(breakpt=res.brks, nbrks=res.nbrks, LML=res.LML, elapsed.time=elapsed.time)
 }
 #----------------------------------------------------
 behavior_segment=function(data, ngibbs, nbins, alpha) {
@@ -56,7 +60,10 @@ behavior_segment=function(data, ngibbs, nbins, alpha) {
 
   LML<- map_dfr(mod, 3) %>% t() %>% data.frame()  #create DF of LML by ID
   names(LML)<- c('id', paste0("Iter_",1:ngibbs))
+  
+  elapsed.time<- map_dfr(mod, 4) %>% t() %>% data.frame()  #create DF of elapsed time
+  names(elapsed.time)<- "time"
 
 
-  list(brkpts = brkpts, nbrks = nbrks, LML = LML)
+  list(brkpts = brkpts, nbrks = nbrks, LML = LML, elapsed.time = elapsed.time)
 }
