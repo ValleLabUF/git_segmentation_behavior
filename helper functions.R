@@ -206,12 +206,12 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
   SL<- data.frame(behav.heat$SL)
   names(SL)<- 1:nbins[1]
   SL<- SL %>% gather(key, value) %>% mutate(time=rep(data$time1, times=nbins[1]),
-                                            behav=rep("SL", nrow(data)*nbins[1]))
+                                            behav=rep("Step Length", nrow(data)*nbins[1]))
   
   TA<- data.frame(behav.heat$TA)
   names(TA)<- 1:nbins[2]
   TA<- TA %>% gather(key, value) %>% mutate(time=rep(data$time1, times=nbins[2]),
-                                            behav=rep("TA", nrow(data)*nbins[2]))
+                                            behav=rep("Turning Angle", nrow(data)*nbins[2]))
   
   behav.heat_long<- rbind(SL,TA)
   behav.heat_long$value<- factor(behav.heat_long$value)
@@ -231,8 +231,8 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
                  list(theme(axis.title = element_text(size = 18),
                             axis.text = element_text(size = 12),
                        strip.text = element_text(size = 12, face = 'bold'),
-                       plot.title = element_text(size = 20, hjust = 0),
-                       plot.margin = margin(0.5, 1, 0.5, 0.5, "cm"),
+                       plot.title = element_text(size = 20, hjust = 0, vjust = -6),
+                       plot.margin = margin(0, 1, 0.5, 0.5, "cm"),
                        legend.justification = "right",
                        legend.position = legend.pos,
                        legend.text = element_text(
@@ -252,10 +252,10 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
     scale_fill_viridis_d('') +
     scale_y_discrete(expand = c(0,0)) +
     scale_x_continuous(expand = c(0,0)) +
-    geom_vline(data = breakpt, aes(xintercept = breaks), color = viridis(n=9)[7],
-               size = 1) +
+    geom_vline(data = breakpt, aes(xintercept = breaks - 0.5), color = viridis(n=9)[7],
+               size = 0.6, alpha = 1) +
     labs(x = "Observations", y = "Bin") +
-    ggtitle(paste("ID", unique(data$id))) +
+    ggtitle(paste(unique(data$id))) +
     theme_bw() +
     title
   )

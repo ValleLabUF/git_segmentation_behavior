@@ -119,21 +119,21 @@ dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,8), a
 
 ## Traceplots
 #type is either 'nbrks' or 'LML' for y-axis label
-identity<- names(behav.list)
-
-traceplot(data = dat.res$nbrks, type = "nbrks", identity = identity)
-traceplot(data = dat.res$LML, type = "LML", identity = identity)
+traceplot(data = dat.res$nbrks, type = "nbrks")
+traceplot(data = dat.res$LML, type = "LML")
 
 
 ##Determine maximum likelihood (ML) for selecting breakpoints
-ML<- apply(dat.res$LML, 1, function(x) getML(dat = x, nburn = 500))
-brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML, identity = identity)
+ML<- getML(dat = dat.res$LML, nburn = 500)
+brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML)
 
 
 ## Heatmaps
 plot.heatmap(data = behav.list, nbins = c(5,8), brkpts = brkpts, dat.res = dat.res,
              type = "behav", title = TRUE, legend = TRUE)
 
+# ggsave("Figure 6a (segmentation heatmap SNIK_12).png", width = 7, height = 5, units = "in",
+#        dpi = 330)
 
 
 #########################################
