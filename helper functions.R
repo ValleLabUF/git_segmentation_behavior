@@ -157,7 +157,7 @@ traceplot=function(data, type) {  #create traceplots for nbrks or LML for all ID
          ylab = ifelse(type == "nbrks", "# of Breakpoints",
                        ifelse(type == "LML","Log Marginal Likelihood",
                               stop("Need to select one of 'nbrks' or 'LML' for plotting"))),
-         main = paste("ID",identity[i]))
+         main = paste(identity[i]))
   }
   on.exit(par(ask = FALSE, mfrow=c(1,1)))
 }
@@ -199,7 +199,7 @@ getBreakpts=function(dat,ML) {  #extract breakpoints of ML per ID
   tmp
 }
 #------------------------------------------------
-plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
+plot.heatmap.behav=function(data, nbins, brkpts, title, legend) {
   
   behav.heat<- behav.seg.image(data, nbins)
   
@@ -241,6 +241,7 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
                             axis.text = element_text(size = 12),
                        strip.text = element_text(size = 12, face = 'bold'),
                        plot.title = element_blank(),
+                       legend.justification = "right",
                        legend.position = legend.pos,
                        legend.text = element_text(
                          margin = margin(r = 15, unit = "pt")))))
@@ -254,7 +255,7 @@ plot.heatmap.behav=function(data, nbins, brkpts, dat.res, title, legend) {
     scale_x_continuous(expand = c(0,0)) +
     geom_vline(data = breakpt, aes(xintercept = breaks - 0.5), color = viridis(n=9)[7],
                size = 0.6, alpha = 1) +
-    labs(x = "Observations", y = "Bin") +
+    labs(x = "\nTime", y = "Bin\n") +
     ggtitle(paste(unique(data$id))) +
     theme_bw() +
     title
@@ -270,8 +271,8 @@ plot.heatmap=function(data, nbins, brkpts, dat.res, type, title, legend) {  #typ
     par(ask = FALSE)
   } else if (type == "behav") {
     par(ask = TRUE)
-    map(data, ~plot.heatmap.behav(., nbins = nbins, brkpts = brkpts, dat.res = dat.res,
-                                  title = title, legend = legend))
+    map(data, ~plot.heatmap.behav(., nbins = nbins, brkpts = brkpts, title = title,
+                                  legend = legend))
     par(ask = FALSE)
   } else {
     stop("Need to select type as either 'loc' or 'behav'")

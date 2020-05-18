@@ -26,7 +26,7 @@ behav.list<- behav.prep(dat=dat, tstep = 300)  #add move params and filter by 30
 angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins
 
 max.dist=max(dat[dat$dt == 300,]$dist, na.rm = T)
-dist.bin.lims=quantile(dat[dat$dt == 300,]$dist, c(0,0.25,0.50,0.75,0.90), na.rm=T)
+dist.bin.lims=quantile(dat[dat$dt == 300,]$dist, c(0,0.625,0.80,0.95,0.99), na.rm=T)
 dist.bin.lims=c(dist.bin.lims, max.dist)  #5 bins
 
 
@@ -55,10 +55,11 @@ ggplot(behav.df, aes(x=rel.angle)) +
 #assign bins to obs
 behav.list<- map(behav.list, discrete_move_par, lims = list(dist.bin.lims, angle.bin.lims),
                  varIn = c("dist", "rel.angle"), varOut = c("SL", "TA"))
-
+#replace TA NAs when in burrow to bin 9
+behav.list<- map(behav.list, ~mutate_at(., "TA", function(x) ifelse(is.na(.$TA) & .$InBurrow == 1
+                                                                    ,9, .$TA)))
 behav.list<- behav.list[sapply(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
 behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA)))  #retain id and parameters on which to segment
-
 
 
 
@@ -72,7 +73,7 @@ param.prop<- behav.df2 %>%
   mutate(prop=n/nrow(behav.df)) %>%
   ungroup()  #if don't ungroup after grouping, ggforce won't work
 
-param.prop<- param.prop[-14,]
+param.prop<- param.prop[-15,]
 param.prop[1:5, "value"]<- ((diff(dist.bin.lims)/2) + dist.bin.lims[1:5])/1000
 param.prop[6:13, "value"]<- (diff(angle.bin.lims)/2) + angle.bin.lims[1:8]
 
@@ -105,14 +106,14 @@ ggplot(data = param.prop %>% filter(key == "TA"), aes(value, prop)) +
 ngibbs = 40000
 
 #prior
-alpha=5
+alpha=1
 
 ## Run Gibbs sampler
 plan(multisession)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
 
-dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,8), alpha = alpha)
-###Takes 3 min to run 40000 iterations for all IDs
+dat.res<- behavior_segment(dat = behav.list2, ngibbs = ngibbs, nbins = c(5,9), alpha = alpha)
+###Takes 82 min to run 40000 iterations for all IDs
 
 
 ## Traceplots
@@ -127,7 +128,7 @@ brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML)
 
 
 ## Heatmaps
-plot.heatmap(data = behav.list, nbins = c(5,8), brkpts = brkpts, dat.res = dat.res,
+plot.heatmap(data = behav.list, nbins = c(5,9), brkpts = brkpts, dat.res = dat.res,
              type = "behav", title = TRUE, legend = TRUE)
 
 

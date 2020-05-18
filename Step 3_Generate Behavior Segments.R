@@ -132,7 +132,7 @@ brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML)
 plot.heatmap(data = behav.list, nbins = c(5,8), brkpts = brkpts, dat.res = dat.res,
              type = "behav", title = TRUE, legend = TRUE)
 
-# ggsave("Figure 6a (segmentation heatmap SNIK_12).png", width = 7, height = 5, units = "in",
+# ggsave("Figure 5a (segmentation heatmap SNIK_12).png", width = 7, height = 5, units = "in",
 #        dpi = 330)
 
 
