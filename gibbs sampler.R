@@ -1,4 +1,4 @@
-behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha) {
+behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha,breakpt=NULL) {
   start.time<- Sys.time()  #start timer
   set.seed(1)
   
@@ -10,7 +10,7 @@ behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha) {
   ndata.types=length(nbins)
    
   #starting values
-  breakpt=floor(max.time/2)
+  if (is.null(breakpt)) breakpt=floor(max.time/2)
   
   #to store results
   res.brks=vector("list", ngibbs)
