@@ -1,4 +1,4 @@
-behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha,breakpt=NULL) {
+behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha,breakpt) {
   start.time<- Sys.time()  #start timer
   set.seed(1)
   
@@ -44,11 +44,14 @@ behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha,breakpt=NULL) {
   list(breakpt=res.brks, nbrks=res.nbrks, LML=res.LML, elapsed.time=elapsed.time)
 }
 #----------------------------------------------------
-behavior_segment=function(data, ngibbs, nbins, alpha) {
+behavior_segment=function(data, ngibbs, nbins, alpha, breakpt=NULL) {
+  
+  ## data must be list of data frames
+  ## breakpt must be list of vectors
   
   tic()  #start timer
-  mod<- future_map(data, function(x) behav.gibbs.sampler(dat = x, ngibbs = ngibbs,
-                                                         nbins = nbins, alpha = alpha),
+  mod<- future_map2(data, breakpt, ~behav.gibbs.sampler(dat = .x, ngibbs = ngibbs, nbins = nbins,
+                                                         alpha = alpha, breakpt = .y),
                    .progress = TRUE)
   toc()  #provide elapsed time
   
