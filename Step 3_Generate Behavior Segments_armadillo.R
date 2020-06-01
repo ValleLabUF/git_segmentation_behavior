@@ -60,7 +60,7 @@ behav.list<- map(behav.list, discrete_move_par, lims = list(dist.bin.lims, angle
 behav.list<- map(behav.list,
                  ~mutate_at(., "TA",
                             function(x) ifelse(is.na(.$TA) & .$InBurrow == 1, 9, .$TA)))
-behav.list<- behav.list[sapply(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
+behav.list<- behav.list[map_dbl(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
 behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA)))  #retain id and parameters on which to segment
 
 
@@ -112,7 +112,8 @@ alpha=1
 
 #subset data and create list of proposed breakpts by ID
 test<- behav.list2[c(1,2,6)]  #IDs tm13, tm14, tm24
-breaks<- list(tm13 = c(268,275), tm14 = c(204,222),
+breaks<- list(tm13 = c(268,275),
+              tm14 = c(204,222),
               tm24 = c(453,466,524,547,566,569,712,735,1944,1966))
 
 ## Run Gibbs sampler

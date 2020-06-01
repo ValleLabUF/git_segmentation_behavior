@@ -2,8 +2,6 @@ discrete_move_par=function(dat, lims, varIn, varOut){  #dat can be DF or matrix
                                                        #lims must be list
                                                        #varIn and varOut can be vectors
   
-  # lims<- setNames(split(lims, seq(nrow(lims)), drop = T), rownames(lims))  #convert lims to list by row and make rownames the name of each element
-  
   for (i in 1:length(lims)) {
     for(j in 1:length(lims[[i]])) {
       tmp = which(dat[,varIn[i]] >= lims[[i]][j] & dat[,varIn[i]] < lims[[i]][j+1])
@@ -15,32 +13,9 @@ discrete_move_par=function(dat, lims, varIn, varOut){  #dat can be DF or matrix
   
   dat
 }
+
 #---------------------------------------------
-# assign.rel_angle.bin=function(dat, angle.bin.lims){
-#   dat$TA<- NA
-# 
-#   for(i in 1:length(angle.bin.lims)) {
-#     tmp=which(dat$rel.angle >= angle.bin.lims[i] & dat$rel.angle < angle.bin.lims[i+1])
-#     dat[tmp,"TA"]=i
-#   }
-#   dat
-# }
-#---------------------------------------------
-# assign.dist.bin=function(dat, dist.bin.lims){
-# 
-#   dat$SL<- NA
-# 
-#   for(i in 1:length(dist.bin.lims)) {
-#     tmp=which(dat$dist >= dist.bin.lims[i] & dat$dist < dist.bin.lims[i+1])
-#     dat[tmp,"SL"]=i
-#   }
-#   tmp=which(dat$dist == dist.bin.lims[length(dist.bin.lims)])
-#   dat[tmp,"SL"]=length(dist.bin.lims) - 1
-# 
-#   dat
-# }
-#---------------------------------------------
-round_track_time=function(dat, int, tol) {  #replacement for sett0() when wanting to only round some of the times
+round_track_time=function(dat, int, tol) {  #replacement for adehabitatLT::sett0() when wanting                                              #to only round some of the times
   dat<- df.to.list(dat, ind = "id")
   for (i in 1:length(dat)) {
     tmp=matrix(NA,nrow(dat[[i]]),2)
@@ -102,19 +77,16 @@ behav.prep=function(dat,tstep) {
   behav.list
 }
 #---------------------------------------------
-behav.seg.image=function(dat, nbins) {  #Transform single var vectors into pres/abs matrices for heatmap; nbins is vector of bins per param in order
-  SL<- matrix(0, nrow(dat), nbins[1])
-  for (i in 1:nrow(dat)){
-    SL[i,dat$SL[i]]=1
+behav.seg.image=function(dat, nbins) {  #Transform single var vectors into pres/abs matrices for                                         #heatmap; nbins is vector of bins per param in order
+  dat<- dat[,-1]  #remove id col
+  behav.list<- map2(list(dat), nbins, ~matrix(0, nrow = nrow(.x), ncol = .y))
+  for (i in 1:length(behav.list)) {
+    for (j in 1:nrow(dat)){
+      behav.list[[i]][j,dat[,i][j]]=1
+    }
   }
   
-  TA<- matrix(0, nrow(dat), nbins[2])
-  for (i in 1:nrow(dat)){
-    TA[i,dat$TA[i]]=1
-  }
-  
-  
-  behav.list<- list(SL=SL,TA=TA)
+  names(behav.list)<- names(dat)
   behav.list
 }
 #---------------------------------------
@@ -201,22 +173,22 @@ getBreakpts=function(dat,ML) {  #extract breakpoints of ML per ID
 #------------------------------------------------
 plot.heatmap.behav=function(data, nbins, brkpts, title, legend) {
   
+  #transform into pres/abs matrix
   behav.heat<- behav.seg.image(data, nbins)
   
-  SL<- data.frame(behav.heat$SL)
-  names(SL)<- 1:nbins[1]
-  SL<- SL %>% gather(key, value) %>% mutate(time=rep(data$time1, times=nbins[1]),
-                                            behav=rep("Step Length", nrow(data)*nbins[1]))
+  #convert to long form
+  behav.heat.long<- map2(behav.heat, as.list(names(behav.heat)), ~{.x %>% 
+      data.frame() %>% 
+      pivot_longer(., cols = 1:ncol(.), names_to = "bin", values_to = "value") %>% 
+      mutate(time = rep(1:nrow(data), each = length(unique(bin))),
+             param = rep(.y, nrow(.)))}
+  ) %>% 
+    bind_rows() %>% 
+    mutate_at("value", factor) %>% 
+    mutate_at("bin", parse_number)
+  levels(behav.heat.long$value)<- c("Unoccupied","Occupied")
   
-  TA<- data.frame(behav.heat$TA)
-  names(TA)<- 1:nbins[2]
-  TA<- TA %>% gather(key, value) %>% mutate(time=rep(data$time1, times=nbins[2]),
-                                            behav=rep("Turning Angle", nrow(data)*nbins[2]))
-  
-  behav.heat_long<- rbind(SL,TA)
-  behav.heat_long$value<- factor(behav.heat_long$value)
-  levels(behav.heat_long$value)<- c("Unoccupied","Occupied")
-  
+  #index brkpts for particular id
   ind=which(unique(data$id) == brkpts$id)
   breakpt<- brkpts[ind,-1] %>% purrr::discard(is.na) %>% t() %>% data.frame()
   names(breakpt)<- "breaks"
@@ -230,35 +202,35 @@ plot.heatmap.behav=function(data, nbins, brkpts, title, legend) {
   title<- ifelse(title == TRUE,
                  list(theme(axis.title = element_text(size = 18),
                             axis.text = element_text(size = 12),
-                       strip.text = element_text(size = 12, face = 'bold'),
-                       plot.title = element_text(size = 20, hjust = 0, vjust = -6),
-                       plot.margin = margin(0, 1, 0.5, 0.5, "cm"),
-                       legend.justification = "right",
-                       legend.position = legend.pos,
-                       legend.text = element_text(
-                         margin = margin(r = 15, unit = "pt")))),
+                            strip.text = element_text(size = 12, face = 'bold'),
+                            plot.title = element_text(size = 20, hjust = 0, vjust = -6),
+                            plot.margin = margin(0, 1, 0.5, 0.5, "cm"),
+                            legend.justification = "right",
+                            legend.position = legend.pos,
+                            legend.text = element_text(
+                              margin = margin(r = 15, unit = "pt")))),
                  list(theme(axis.title = element_text(size = 18),
                             axis.text = element_text(size = 12),
-                       strip.text = element_text(size = 12, face = 'bold'),
-                       plot.title = element_blank(),
-                       legend.justification = "right",
-                       legend.position = legend.pos,
-                       legend.text = element_text(
-                         margin = margin(r = 15, unit = "pt")))))
+                            strip.text = element_text(size = 12, face = 'bold'),
+                            plot.title = element_blank(),
+                            legend.justification = "right",
+                            legend.position = legend.pos,
+                            legend.text = element_text(
+                              margin = margin(r = 15, unit = "pt")))))
   
   print(
-  ggplot(behav.heat_long, aes(x=time, y=key, fill=value)) +
-    geom_tile() +
-    facet_wrap(~behav, scales = 'free', nrow = 2) +
-    scale_fill_viridis_d('') +
-    scale_y_discrete(expand = c(0,0)) +
-    scale_x_continuous(expand = c(0,0)) +
-    geom_vline(data = breakpt, aes(xintercept = breaks - 0.5), color = viridis(n=9)[7],
-               size = 0.6, alpha = 1) +
-    labs(x = "\nTime", y = "Bin\n") +
-    ggtitle(paste(unique(data$id))) +
-    theme_bw() +
-    title
+    ggplot(behav.heat.long, aes(x=time, y=as.character(bin), fill=value)) +
+      geom_tile() +
+      facet_wrap(~param, scales = 'free', nrow = 2) +
+      scale_fill_viridis_d('') +
+      scale_y_discrete(expand = c(0,0)) +
+      scale_x_continuous(expand = c(0,0)) +
+      geom_vline(data = breakpt, aes(xintercept = breaks - 0.5), color = viridis(n=9)[7],
+                 size = 0.6, alpha = 1) +
+      labs(x = "\nTime", y = "Bin\n") +
+      ggtitle(paste(unique(data$id))) +
+      theme_bw() +
+      title
   )
 }
 #------------------------------------------------
