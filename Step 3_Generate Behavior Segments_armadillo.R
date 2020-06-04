@@ -27,7 +27,7 @@ angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins
 
 max.dist=max(dat[dat$dt == 300,]$dist, na.rm = T)
 dist.bin.lims=quantile(dat[dat$dt == 300 & dat$dist > 0,]$dist, c(0,0.25,0.50,0.75,0.95),na.rm=T)
-dist.bin.lims=c(0, dist.bin.lims, max.dist)  #5 bins
+dist.bin.lims=c(0, dist.bin.lims, max.dist)  #6 bins
 
 
 #Viz limits on continuous vars
@@ -112,9 +112,7 @@ alpha=1
 
 #subset data and create list of proposed breakpts by ID
 test<- behav.list2[c(1,2,6)]  #IDs tm13, tm14, tm24
-breaks<- list(tm13 = c(268,275),
-              tm14 = c(204,222),
-              tm24 = c(453,466,524,547,566,569,712,735,1944,1966))
+breaks<- map(behav.list, find.breaks, "InBurrow")[c(1,2,6)]
 
 ## Run Gibbs sampler
 plan(multisession)  #run all MCMC chains in parallel
@@ -137,7 +135,7 @@ brkpts<- getBreakpts(dat = dat.res$brkpts, ML = ML)
 
 
 ## Heatmaps
-plot.heatmap(data = behav.list[c(1,2,6)], nbins = c(6,9), brkpts = brkpts, dat.res = dat.res,
+plot.heatmap(data = behav.list2[c(1,2,6)], nbins = c(6,9), brkpts = brkpts, dat.res = dat.res,
              type = "behav", title = TRUE, legend = TRUE)
 
 
@@ -146,7 +144,7 @@ plot.heatmap(data = behav.list[c(1,2,6)], nbins = c(6,9), brkpts = brkpts, dat.r
 #### Assign Behavioral Time Segments ####
 #########################################
 
-dat_out<- map(behav.list, assign.time.seg, brkpts = brkpts) %>% map_dfr(`[`)  #assign time seg and make as DF
+dat_out<- map(behav.list[c(1,2,6)], assign.time.seg, brkpts = brkpts) %>% map_dfr(`[`)  #assign time seg and make as DF
 
 setwd("~/Documents/Snail Kite Project/Data/R Scripts/ValleLabUF/git_LDA_behavior")
 # write.csv(dat_out, "Armadillo Data_behav.csv", row.names = F)

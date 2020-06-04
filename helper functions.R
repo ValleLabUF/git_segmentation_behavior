@@ -104,8 +104,10 @@ assign.time.seg=function(dat, brkpts){  #add tseg assignment to each obs
   dat
 }
 #------------------------------------------------
-df.to.list=function(dat, ind) {  #ind must be in quotes
-  id<- unique(dat[,ind])
+df.to.list=function(dat, ind) {  #ind must be in quotes if name, or provide col number
+  id<- dat %>% 
+    pull(ind) %>% 
+    unique()
   n=length(id)
   dat.list<- vector("list", n)
   names(dat.list)<- id
@@ -115,6 +117,10 @@ df.to.list=function(dat, ind) {  #ind must be in quotes
     dat.list[[i]]<- dat[tmp,]
   }
   dat.list
+}
+#------------------------------------------------
+find.breaks=function(dat, ind) {  #estimate breakpoints for prespecification for segm. model
+  which(diff(dat[,ind]) != 0) + 1
 }
 #------------------------------------------------
 traceplot=function(data, type) {  #create traceplots for nbrks or LML for all IDs
