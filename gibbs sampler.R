@@ -44,7 +44,7 @@ behav.gibbs.sampler=function(dat,ngibbs,nbins,alpha,breakpt) {
   list(breakpt=res.brks, nbrks=res.nbrks, LML=res.LML, elapsed.time=elapsed.time)
 }
 #----------------------------------------------------
-behavior_segment=function(data, ngibbs, nbins, alpha, breakpt=NULL) {
+behavior_segment=function(data, ngibbs, nbins, alpha, breakpt = map(names(data), ~ NULL)) {
   
   ## data must be list of data frames
   ## breakpt must be list of vectors
