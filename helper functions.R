@@ -50,7 +50,7 @@ round_track_time=function(dat, int, tol) {  #replacement for adehabitatLT::sett0
 #---------------------------------------------
 #discretize step length and turning angle by ID
 #only subset obs w/ 1 hr (3600 s) time step; results in loss of irregular obs
-behav.prep=function(dat,tstep) {
+behav.prep=function(dat, tstep, dat.list) {
   id<- unique(dat$id)
   
   cond<- matrix(0, length(dat.list), 1)
@@ -255,4 +255,27 @@ plot.heatmap=function(data, nbins, brkpts, dat.res, type, title, legend) {  #typ
   } else {
     stop("Need to select type as either 'loc' or 'behav'")
   }
+}
+
+#------------------------------------------------
+prep.data=function(dat, coord.names) {
+  
+  dat<- dat %>% 
+    rename(x = coord.names[1], y = coord.names[2])
+  
+  step<- sqrt((diff(dat[,"x"]))^2 + (diff(dat[,"y"]))^2)
+  dat$step<- c(step, NA)
+  
+  #calc angle
+  angle<- vector()
+  for (i in 2:nrow(dat)) {
+    angle[i-1]<- atan2(dat[(i+1),"y"] - dat[i,"y"], dat[(i+1),"x"] - dat[i,"x"]) -
+      atan2(dat[i,"y"] - dat[i-1,"y"], dat[i,"x"] - dat[i-1,"x"])
+  }
+  
+  angle<- ifelse(angle > pi, angle - 2*pi,
+                 ifelse(angle < -pi, 2*pi + angle, angle))
+  dat$angle<- c(NA, angle)
+  
+  dat
 }
