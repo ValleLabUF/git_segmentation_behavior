@@ -22,7 +22,7 @@ dat<- round_track_time(dat = dat, int = 300, tol = (1/60)*3600)
 tmp<- which(dat$InBurrow == 1)
 dat$x[tmp]<- dat$x[tmp] + runif(length(tmp), -0.5,0.5)
 dat$y[tmp]<- dat$y[tmp] + runif(length(tmp), -0.5,0.5)
-dat<- prep.data(dat = dat, coord.names = c("x","y"))
+dat<- prep.data(dat = dat, coord.names = c("x","y"), id = "id")
 
 # dat$LC<- as.numeric(dat$lc)  #convert string to numeric
 dat$InBurrow<- dat$InBurrow + 1  #can't have 0s in data

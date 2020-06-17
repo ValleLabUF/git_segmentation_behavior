@@ -258,24 +258,34 @@ plot.heatmap=function(data, nbins, brkpts, dat.res, type, title, legend) {  #typ
 }
 
 #------------------------------------------------
-prep.data=function(dat, coord.names) {
+prep.data.internal=function(dat, coord.names) {
   
-  dat<- dat %>% 
+  #change names of coords to 'x' and 'y'
+  dat<- dat %>%
     rename(x = coord.names[1], y = coord.names[2])
   
+  #calculate step length
   step<- sqrt((diff(dat[,"x"]))^2 + (diff(dat[,"y"]))^2)
   dat$step<- c(step, NA)
   
-  #calc angle
+  #calculate turning angle
   angle<- vector()
   for (i in 2:nrow(dat)) {
     angle[i-1]<- atan2(dat[(i+1),"y"] - dat[i,"y"], dat[(i+1),"x"] - dat[i,"x"]) -
       atan2(dat[i,"y"] - dat[i-1,"y"], dat[i,"x"] - dat[i-1,"x"])
   }
-  
+  #adjust angle if |angle| > pi
   angle<- ifelse(angle > pi, angle - 2*pi,
                  ifelse(angle < -pi, 2*pi + angle, angle))
   dat$angle<- c(NA, angle)
   
   dat
+}
+#------------------------------------------------
+
+prep.data=function(dat, coord.names, id) {
+  
+  map(df.to.list(dat = dat, ind = id), 
+      ~prep.data.internal(., coord.names = coord.names)) %>% 
+    bind_rows()
 }
