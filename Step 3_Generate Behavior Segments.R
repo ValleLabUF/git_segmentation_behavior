@@ -25,9 +25,8 @@ behav.list<- behav.prep(dat=dat, tstep = 3600)  #add move params and filter by 3
 #define bin number and limits for step lengths and turning angles
 angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins
 
-max.dist=max(dat[dat$dt == 3600,]$dist, na.rm = T)
-dist.bin.lims=quantile(dat[dat$dt == 3600,]$dist, c(0,0.25,0.50,0.75,0.90), na.rm=T)
-dist.bin.lims=c(dist.bin.lims, max.dist)  #5 bins
+dist.bin.lims=quantile(dat[dat$dt == 3600,]$dist,
+                       c(0,0.25,0.50,0.75,0.90,1), na.rm=T) #5 bins
 
 
 #Viz limits on continuous vars

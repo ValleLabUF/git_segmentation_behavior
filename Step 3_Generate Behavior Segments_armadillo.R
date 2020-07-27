@@ -71,7 +71,7 @@ behav.list<- map(behav.list, discrete_move_par, lims = list(dist.bin.lims, angle
 #                  ~mutate_at(., "TA",
 #                             function(x) ifelse(is.na(.$TA) & .$InBurrow == 1, 9, .$TA)))
 behav.list<- behav.list[map_dbl(behav.list, nrow) > 2]  #remove IDs w/ fewer than 3 obs
-behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA, InBurrow)))  #retain id and parameters on which to segment
+behav.list2<- lapply(behav.list, function(x) subset(x, select = c(id, SL, TA)))  #retain id and parameters on which to segment
 
 
 
@@ -128,7 +128,7 @@ breaks<- map(behav.list, find.breaks, "InBurrow")
 plan(multisession)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
 
-dat.res<- behavior_segment(data = behav.list2, ngibbs = ngibbs, nbins = c(5,8,2), alpha = alpha,
+dat.res<- behavior_segment(data = behav.list2, ngibbs = ngibbs, nbins = c(5,8), alpha = alpha,
                            breakpt = breaks)
 ###Takes 82 min to run 40000 iterations for all IDs
 

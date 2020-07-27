@@ -97,7 +97,22 @@ assign.time.seg=function(dat, brkpts){  #add tseg assignment to each obs
   n=length(breakpt1)
   res=matrix(NA,nrow(dat),1)
   for (i in 2:n){
-    ind=which(breakpt1[i-1]<=dat$time1 & dat$time1<breakpt1[i])
+    ind=which(breakpt1[i-1] < dat$time1 & dat$time1 <= breakpt1[i])
+    res[ind,]=i-1
+  }
+  dat$tseg<- as.vector(res)
+  dat
+}
+#------------------------------------------------
+assign.time.seg_hmm=function(dat, brkpts){  #add tseg assignment to each obs
+  tmp=which(unique(dat$id) == brkpts$id)
+  breakpt<- brkpts[tmp,-1] %>% purrr::discard(is.na) %>% as.numeric(.[1,])
+  breakpt<- breakpt + 1  #only for analysis of HMMs with simulated data
+  breakpt1=c(0,breakpt,Inf)
+  n=length(breakpt1)
+  res=matrix(NA,nrow(dat),1)
+  for (i in 2:n){
+    ind=which(breakpt1[i-1] < dat$time1 & dat$time1 <= breakpt1[i])
     res[ind,]=i-1
   }
   dat$tseg<- as.vector(res)
@@ -258,6 +273,7 @@ plot.heatmap=function(data, nbins, brkpts, dat.res, type, title, legend) {  #typ
 }
 
 #------------------------------------------------
+
 prep.data.internal=function(dat, coord.names) {
   
   #change names of coords to 'x' and 'y'
@@ -282,7 +298,6 @@ prep.data.internal=function(dat, coord.names) {
   dat
 }
 #------------------------------------------------
-
 prep.data=function(dat, coord.names, id) {
   
   map(df.to.list(dat = dat, ind = id), 
