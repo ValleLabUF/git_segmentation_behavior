@@ -207,7 +207,7 @@ plot.heatmap.behav=function(data, nbins, brkpts, title, legend) {
     bind_rows() %>% 
     mutate_at("value", factor) %>% 
     mutate_at("bin", parse_number)
-  levels(behav.heat.long$value)<- c("Unoccupied","Occupied")
+  levels(behav.heat.long$value)<- c("Unused","Used")
   
   #index brkpts for particular id
   ind=which(unique(data$id) == brkpts$id)
