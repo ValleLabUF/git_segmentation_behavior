@@ -20,7 +20,7 @@ dat<- round_track_time(dat = dat, int = 3600, tol = 5/60*3600)
 dat.list<- df.to.list(dat=dat, ind = "id")
 
 #filter data for tstep of interest
-behav.list<- behav.prep(dat=dat, tstep = 3600)  #add move params and filter by 3600 s interval
+behav.list<- behav.prep(dat=dat, tstep = 3600, dat.list = dat.list)  #add move params and filter by 3600 s interval
 
 #define bin number and limits for step lengths and turning angles
 angle.bin.lims=seq(from=-pi, to=pi, by=pi/4)  #8 bins

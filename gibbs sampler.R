@@ -52,20 +52,43 @@ behavior_segment=function(data, ngibbs, nbins, alpha, breakpt = map(names(data),
   tic()  #start timer
   mod<- future_map2(data, breakpt, ~behav.gibbs.sampler(dat = .x, ngibbs = ngibbs, nbins = nbins,
                                                          alpha = alpha, breakpt = .y),
-                   .progress = TRUE)
+                   .progress = TRUE, .options = furrr::future_options(seed = T))
   toc()  #provide elapsed time
   
   
   brkpts<- map(mod, 1)  #create list of all sets breakpoints by ID
   
-  nbrks<- map_dfr(mod, 2) %>% t() %>% data.frame()  #create DF of number of breakpoints by ID
-  names(nbrks)<- c('id', paste0("Iter_",1:ngibbs))
+  nbrks<- purrr::map_dfr(mod, 2) %>%
+    unlist() %>%
+    matrix(.data, nrow = length(mod), ncol = (ngibbs + 1), byrow = T) %>%
+    data.frame()  #create DF of number of breakpoints by ID
+  names(nbrks)<- c('id', paste0("Iter_", 1:ngibbs))
+  ncol.nbrks<- ncol(nbrks)
+  # nbrks<- nbrks %>%
+  #   dplyr::mutate_at(2:ncol.nbrks, as.character) %>%
+  #   dplyr::mutate_at(2:ncol.nbrks, as.numeric) %>%
+  #   dplyr::mutate_at(1, as.character)
+  nbrks[,2:ncol.nbrks]<- apply(nbrks[,2:ncol.nbrks], 2, function(x) as.numeric(as.character(x)))
+    
 
-  LML<- map_dfr(mod, 3) %>% t() %>% data.frame()  #create DF of LML by ID
-  names(LML)<- c('id', paste0("Iter_",1:ngibbs))
+  LML<- purrr::map_dfr(mod, 3) %>%
+    unlist() %>%
+    matrix(.data, nrow = length(mod), ncol = (ngibbs + 1), byrow = T) %>%
+    data.frame()  #create DF of LML by ID
+  names(LML)<- c('id', paste0("Iter_", 1:ngibbs))
+  ncol.LML<- ncol(LML)
+  # LML<- LML %>%
+  #   dplyr::mutate_at(2:ncol.LML, as.character) %>%
+  #   dplyr::mutate_at(2:ncol.LML, as.numeric) %>%
+  #   dplyr::mutate_at(1, as.character)
+  LML[,2:ncol.LML]<- apply(LML[,2:ncol.LML], 2, function(x) as.numeric(as.character(x)))
   
-  elapsed.time<- map_dfr(mod, 4) %>% t() %>% data.frame()  #create DF of elapsed time
+  elapsed.time<- purrr::map_dfr(mod, 4) %>%
+    t() %>%
+    data.frame()  #create DF of elapsed time
   names(elapsed.time)<- "time"
+  elapsed.time<- elapsed.time %>%
+    dplyr::mutate_at("time", as.character)
 
 
   list(brkpts = brkpts, nbrks = nbrks, LML = LML, elapsed.time = elapsed.time)
