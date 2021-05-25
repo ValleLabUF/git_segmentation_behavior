@@ -10,10 +10,10 @@ library(ggforce)
 
 dat<- read.csv("Snail Kite Gridded Data_TOHO.csv", header = T, sep = ",")
 dat$date<- dat$date %>% as_datetime()
-# dat$rel.angle<- abs(dat$rel.angle)  #take abs value of angle
 
 #if dt within 5 min of 1 hr, round to 1 hr
-dat<- round_track_time(dat = dat, id = "id", int = 3600, tol = 300, time.zone = "UTC")
+dat<- round_track_time(dat = dat, id = "id", int = 3600, tol = 300, time.zone = "UTC",
+                       units = "secs")
 dat.list<- df_to_list(dat = dat, ind = "id")
 
 # Filter observations
@@ -108,16 +108,16 @@ set.seed(1)
 
 # Define model params
 alpha<- 1
-ngibbs<- 40000
+ngibbs<- 80000
 nbins<- c(5,8)
 
 ## Run Gibbs sampler
-plan(multisession)  #run all MCMC chains in parallel
+plan(multisession, workers = 10)  #run all MCMC chains in parallel
                     #refer to future::plan() for more details
-dat.res<- segment_behavior(data = behav.list2[21], ngibbs = ngibbs, nbins = nbins,
+dat.res<- segment_behavior(data = behav.list2, ngibbs = ngibbs, nbins = nbins,
                            alpha = alpha)
 future:::ClusterRegistry("stop")  #close all threads and memory used
-###Takes 25 min to run 40000 iterations for 26 IDs
+###Takes 1 hr for 80000 iter
 
 
 
@@ -126,9 +126,41 @@ traceplot(data = dat.res$nbrks, ngibbs = ngibbs, type = "nbrks")
 traceplot(data = dat.res$LML, ngibbs = ngibbs, type = "LML")
 
 
+
+### Re-run segmentation for SNIK 12 to reach convergence
+
+set.seed(1)
+
+# Define model params
+alpha<- 1
+ngibbs<- 80000
+nbins<- c(5,8)
+
+## Run Gibbs sampler
+dat.res2<- segment_behavior(data = behav.list2[21], ngibbs = ngibbs, nbins = nbins,
+                           alpha = alpha)
+###Takes 20 min for 150000 iter
+
+
+
+## Traceplots
+traceplot(data = dat.res2$nbrks, ngibbs = ngibbs, type = "nbrks")
+traceplot(data = dat.res2$LML, ngibbs = ngibbs, type = "LML")
+
+
+
+## Replace results for SNIK12 based on new model
+dat.res3<- dat.res
+dat.res3$brkpts$`SNIK 12`<- dat.res2$brkpts$`SNIK 12`
+dat.res3$nbrks[21,]<- dat.res2$nbrks[1,]
+dat.res3$LML[21,]<- dat.res2$LML[1,]
+dat.res3$elapsed.time[21,]<- dat.res2$elapsed.time[1,]
+
+
+
 ##Determine maximum likelihood (ML) for selecting breakpoints
-MAP.est<- get_MAP(dat = dat.res$LML, nburn = ngibbs/2)
-brkpts<- get_breakpts(dat = dat.res$brkpts, MAP.est = MAP.est)
+MAP.est<- get_MAP(dat = dat.res3$LML, nburn = ngibbs/2)
+brkpts<- get_breakpts(dat = dat.res3$brkpts, MAP.est = MAP.est)
 
 
 # Plot breakpoints over the data
@@ -137,7 +169,7 @@ behav.list<- lapply(behav.list, function(x) x %>%
 plot_breakpoints(data = lapply(behav.list[21], function(x) x[1:2500,]),
                  as_date = FALSE, var_names = c("dist","rel.angle"),
                  var_labels = c('Step Length (km)', 'Turning Angle (rad)'),
-                 brkpts = brkpts[,1:27])
+                 brkpts = brkpts[21,1:12])
 
 # plot_breakpoints(data = behav.list[21], as_date = FALSE, var_names = c("SL","TA"),
 #                  var_labels = c('SL Bins', 'TA Bins'), brkpts = brkpts)
@@ -207,4 +239,15 @@ ggplot() +
 
 
 # ggsave("Compare MAP vs Posterior Breakpoints.png", width = 13, height = 9, units = "in",
-#        dpi = 300)  
+#        dpi = 300)
+
+
+
+#########################################
+#### Assign Behavioral Time Segments ####
+#########################################
+
+dat_out<- assign_tseg(dat = behav.list, brkpts = brkpts)  #assign time seg and make as DF
+
+setwd("~/Documents/Snail Kite Project/Data/R Scripts/ValleLabUF/git_LDA_behavior")
+# write.csv(dat_out, "Snail Kite Gridded Data_TOHO_behav2.csv", row.names = F)
